@@ -63,18 +63,22 @@ namespace FuExport
             {
                 SceneObjectContainer soc = new SceneObjectContainer();
 
+                soc.Name = ob.GetName();
+
                 double4x4 mtxD = ob.GetMl();
                 soc.Transform = (float4x4) mtxD;
                 PolygonObject polyOb = ob as PolygonObject;
                 if (polyOb != null)
                 {
-                    /*double3  padr = ToPoly(op)->GetPointR();
-                    CPolygon vadr = ToPoly(op)->GetPolygonR();*/
+                    float3[] normalsOb = polyOb.CreatePhongNormals();
+                    List<float3> normals = new List<float3>();
+
                     int nPolys = polyOb.GetPolygonCount();
                     ushort nNewVerts = 0;
                     List<float3> verts = new List<float3>();
                     List<ushort> tris = new List<ushort>();
 
+                    int iNorm = 0;
                     for (int i = 0; i < nPolys; i++)
                     {
                         CPolygon poly = polyOb.GetPolygonAt(i);
@@ -87,19 +91,26 @@ namespace FuExport
                         verts.Add((float3)b);
                         verts.Add((float3)c);
 
-                        tris.AddRange(new ushort[] {nNewVerts, (ushort)(nNewVerts+1), (ushort)(nNewVerts+2)});
+                        normals.Add(normalsOb[iNorm++]);
+                        normals.Add(normalsOb[iNorm++]);
+                        normals.Add(normalsOb[iNorm++]);
+
+                        tris.AddRange(new ushort[] { nNewVerts, (ushort)(nNewVerts + 2), (ushort)(nNewVerts + 1) });
 
                         if (c != d)
                         {
                             // The Polyogon is not only a triangle, but a quad. Add the second triangle.
                             verts.Add((float3)d);
-                            tris.AddRange(new ushort[] { nNewVerts, (ushort)(nNewVerts + 2), (ushort)(nNewVerts + 3) });
+                            normals.Add(normalsOb[iNorm]);
+                            tris.AddRange(new ushort[] { nNewVerts, (ushort)(nNewVerts + 3), (ushort)(nNewVerts + 2) });
                             nNewVerts += 1;
                         }
+                        iNorm++; // Consume the 4th normal anyway
                         nNewVerts += 3;
                     }
                     soc.Mesh = new MeshContainer()
                     {
+                        Normals = normals.ToArray(),
                         Vertices = verts.ToArray(),
                         Triangles = tris.ToArray(),
                     };

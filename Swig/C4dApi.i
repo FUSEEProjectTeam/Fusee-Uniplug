@@ -29,7 +29,7 @@
 //    C4D API, it is also recommended here to keep the dependency on the C4D API as samll as possible.
 //
 //  For a handfull of types some extra hand coding is done here. This happens whenever an appropriate C# type already
-//  exists (and must thus not be created and used by Swig). Examples are the C#-standard strin type (mapped from the 
+//  exists (and must thus not be created and used by Swig). Examples are the C#-standard string type (mapped from the 
 //  Maxon-C++-API-String type), or the Math.La C#- Matrix and Vector classes (mapped from the respective Maxon-C++ classes).
 //  Mapping a C++-API type to an existing C# type can be done using so called typemaps - a concept which has some learning 
 //  curve, especially with the poor documentation given (at least try to grasp the general typemap syntax from the docs).
@@ -89,7 +89,27 @@ struct Matrix_POD
 	Vector_POD off, v1, v2, v3;
 };
 
+struct SVector_POD
+{
+	float x, y, z;
+};
+
 %}
+
+////////////////////////////////////////////////////////////////////////////////////
+// DeleteMemPtr can be called from generated cs code to free 
+// pointers allocated by C4D as return arrays. This is used in CreatePhongNormals
+//
+// <void*-IntPtr mapping>
+%typemap(cstype, out="IntPtr /* void*_cstype */") void *memPtr "IntPtr /* void*_cstype */"
+%typemap(csin) void *memPtr
+  "new HandleRef(null,$csinput) /* void*_csin */"
+%inline %{
+void DeleteMemPtr(void *memPtr) {
+	DeleteMem(memPtr);
+}
+%}
+// </void*-IntPtr mapping>
 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -444,7 +464,7 @@ BaseObject *
 
 
 // Map Vector   TO   Fusee.Math.double3
-%typemap(cstype, out="Fusee.Math.double3 /* Vector_cstype_out */") Vector "Fusee.Math.double3 /* Vectorcstype */"
+%typemap(cstype, out="Fusee.Math.double3 /* Vector_cstype_out */") Vector "Fusee.Math.double3 /* Vector_cstype */"
 %typemap(csout, excode=SWIGEXCODE) Vector 
 %{ {  /* <Vector_csout> */
       Fusee.Math.double3 ret = $imcall;$excode
@@ -762,6 +782,27 @@ BaseObject *
   return (PointObject*)iObj;
  }
 }
+%typemap(cstype, out="Fusee.Math.float3[] /* SVector*PolygonObject::CreatePhongNormals_cstype */") SVector *PolygonObject::CreatePhongNormals "Fusee.Math.float3[] /* SVector*PolygonObject::CreatePhongNormals_cstype */"
+%typemap(out) SVector *PolygonObject::CreatePhongNormals
+%{ /* <SVector*PolygonObject::CreatePhongNormals_out> */ 
+   $result = *((SVector_POD **)(&$1)); 
+   /* </SVector*PolygonObject::CreatePhongNormals_out> */%}
+%typemap(csout, excode=SWIGEXCODE) SVector *PolygonObject::CreatePhongNormals
+%{ {  /* <SVector*PolygonObject::CreatePhongNormals_csout> */
+      IntPtr p_ret = $imcall;$excode
+	  int nNormals = this.GetPolygonCount()*4;
+      Fusee.Math.float3[] ret = new Fusee.Math.float3[nNormals];
+      unsafe
+	  {
+	      for (int i = 0; i < nNormals; i++)
+		  {
+			  ret[i] = Fusee.Math.ArrayConvert.ArrayFloatTofloat3(((float *)(p_ret))+3*i);
+	      }
+	  }
+	  C4dApi.DeleteMemPtr(p_ret);
+      return ret;
+   } /* </SVector*PolygonObject::CreatePhongNormals_csout> */ %}
+
 
 %include "c4d_baseobject.h";
 

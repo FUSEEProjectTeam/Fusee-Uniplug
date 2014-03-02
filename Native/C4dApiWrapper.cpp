@@ -368,6 +368,16 @@ struct Matrix_POD
 	Vector_POD off, v1, v2, v3;
 };
 
+struct SVector_POD
+{
+	float x, y, z;
+};
+
+
+
+void DeleteMemPtr(void *memPtr) {
+	DeleteMem(memPtr);
+}
 
 
 	inline void blDelete_cs(GeListNode *v) { if (v) C4DOS.Bl->Free(v); }
@@ -2729,6 +2739,14 @@ void SwigDirector_SceneSaverData::swig_init_callbacks() {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+SWIGEXPORT void SWIGSTDCALL CSharp_DeleteMemPtr(void * jarg1) {
+  void *arg1 = (void *) 0 ;
+  
+  arg1 = (void *)jarg1; 
+  DeleteMemPtr(arg1);
+}
+
 
 SWIGEXPORT void SWIGSTDCALL CSharp_blDelete_cs(void * jarg1) {
   GeListNode *arg1 = (GeListNode *) 0 ;
@@ -39626,7 +39644,9 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_PolygonObject_CreatePhongNormals(void * jar
   
   arg1 = (PolygonObject *)jarg1; 
   result = (SVector *)(arg1)->CreatePhongNormals();
-  jresult = (void *)result; 
+  /* <SVector*PolygonObject::CreatePhongNormals_out> */ 
+  jresult = *((SVector_POD **)(&result)); 
+  /* </SVector*PolygonObject::CreatePhongNormals_out> */
   return jresult;
 }
 
